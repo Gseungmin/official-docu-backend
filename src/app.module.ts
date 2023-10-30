@@ -1,12 +1,26 @@
+import { SlackModule } from 'nestjs-slack-webhook';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerMiddleware } from './common/logger/logger.middleware';
+import { TimeoutInterceptor } from './common/interceptor/timeout.intercetor';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    SlackModule.forRootAsync({
+      useFactory: (configService: ConfigService) => {
+        return {
+          type: 'webhook',
+          url: configService.get<string>('WEB_HOOK_URL'),
+        };
+      },
+      inject: [ConfigService],
+    }),
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TimeoutInterceptor],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
